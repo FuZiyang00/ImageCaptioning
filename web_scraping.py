@@ -22,11 +22,14 @@ class Web_scraper:
     def get_images(self):
         response = urlopen(self.req)
         bs = BeautifulSoup(response.read(), 'html.parser')
+
         #  extract all img tags with class img
         images = bs.find_all('img', attrs={'class':'tile-image lazyload'})
-        print(images[0])
+        print(images[0]) # debugging purposes
+
         links = [listing['data-srcset'].split(' ')[0].strip() for listing in images]
-        print(links[0])
+        print(links[0]) # debugging purposes
+        
         title = [listing['title'] for listing in images]
 
         return links, title
