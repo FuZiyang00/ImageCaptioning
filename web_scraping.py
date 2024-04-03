@@ -10,9 +10,18 @@ import re
 
 class Web_scraper: 
 
-    def __init__(self, url):
+    def __init__(self, url, browser):
         self.url = url
-        self.driver = webdriver.Chrome()  # Change this to your preferred WebDriver
+        if browser.lower() == 'chrome':
+            self.driver = webdriver.Chrome()  # For Chrome
+        elif browser.lower() == 'firefox':
+            self.driver = webdriver.Firefox()  # For Firefox
+        elif browser.lower() == 'edge':
+            self.driver = webdriver.Edge()  # For Edge
+        elif browser.lower() == 'safari':
+            self.driver = webdriver.Safari()  # For Safari
+        else:
+            raise ValueError("Unsupported browser type. Please choose from 'chrome', 'firefox', 'edge', or 'safari'.")
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
@@ -79,8 +88,6 @@ class Web_scraper:
                 time.sleep(1)
             if count == 100:
                 break
-
-        print(f'{count} images downloaded successfully')
 
         print(f'{count} images downloaded successfully')
 
