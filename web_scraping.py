@@ -1,12 +1,13 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from tqdm import tqdm
 import requests
 import os
 import time
 import re
+from os import listdir
+from os.path import isfile, join
+import json
 
 class Web_scraper: 
 
@@ -22,32 +23,24 @@ class Web_scraper:
             self.driver = webdriver.Safari()  # For Safari
         else:
             raise ValueError("Unsupported browser type. Please choose from 'chrome', 'firefox', 'edge', or 'safari'.")
+        
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
                         'Accept-Encoding': 'none',
                         'Accept-Language': 'en-US,en;q=0.8',
                         'Connection': 'keep-alive'}
-
-    
-    def get_images(self):
+        
+    def get_images(self, scrolls):
         self.driver.get(self.url)
         # Auto-scroll to the bottom of the page to load more images
         
-        #last_height = self.driver.execute_script("return document.body.scrollHeight")
-        #while True:
-        #    self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        #    time.sleep(2)  # Adjust the sleep time as needed
-        #    new_height = self.driver.execute_script("return document.body.scrollHeight")
-        #    if new_height == last_height:
-        #        break
-        #    last_height = new_height
-        
         scroll_count = 0
-        while scroll_count < 10:
+        while scroll_count < scrolls:
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
             scroll_count += 1
+            print(f"Scroll count: {scroll_count}")
 
         # Parse the HTML content after auto-scrolling
         bs = BeautifulSoup(self.driver.page_source, 'html.parser')
@@ -62,11 +55,6 @@ class Web_scraper:
         title = [listing['title'] for listing in images]
 
         return links, title
-    
-    def clean_title(self, title):
-        # Remove invalid characters from title using regex
-        cleaned_title = re.sub(r'[\\/*?:"<>|]', '', title)
-        return cleaned_title
 
     def download_images(self, links, title):
         count = 0
@@ -81,15 +69,37 @@ class Web_scraper:
                 print(f"Index {i} out of range for titles list.")  # Debugging line
                 break
 
-            cleaned_title = self.clean_title(title[i])  # Corrected variable name
-            with open(f'images/{cleaned_title}.jpg', 'wb') as f:
-                f.write(requests.get(links[i]).content)
-                count += 1
-                time.sleep(1)
-            if count == 100:
+            cleaned_title = re.sub(r'[\\/*?:"<>|]', '', title[i])
+            if not os.path.exists(f'images/{cleaned_title}.jpg'):
+                with open(f'images/{cleaned_title}.jpg', 'wb') as f:
+                    f.write(requests.get(links[i]).content)
+                    count += 1
+                    time.sleep(1)
+            if count == 250:
                 break
 
         print(f'{count} images downloaded successfully')
 
     def close_driver(self):
         self.driver.quit()
+    
+    @staticmethod
+    def get_metadata(path):
+        onlyfiles = [f for f in listdir(path) if isfile(join(path, f))] 
+        print(onlyfiles, len(onlyfiles))
+        
+        captions = [file_name.split(".")[0] for file_name in onlyfiles]
+        print(captions, len(captions))
+        print("getting metadata")
+        l = []
+        for i in range(len(onlyfiles)):
+            meta = {}
+            meta['file_name'] = str(onlyfiles[i])
+            meta['text'] = str(captions[i])
+            l.append(meta)
+        print(len(l))
+        if not os.path.exists(path + "/metadata.jsonl"):
+            print("saving metadata")
+            with open(join(path, 'metadata.jsonl'), 'w') as f:
+                for item in l:
+                    f.write(json.dumps(item) + '\n')
