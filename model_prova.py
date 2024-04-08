@@ -19,35 +19,49 @@ drive.mount('/content/drive')
 import os
 import shutil
 
-def create_vegetable_dictionary(folder_path):
+def create_vegetable_dictionary(folder_path, destination_folder):
     captions = []
-    # Iterate through each vegetable type folder
-    for vegetable_type in os.listdir(folder_path):
-        vegetable_type_path = os.path.join(folder_path, vegetable_type)
+    # Iterate through each item in the folder
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
 
         # Check if it's a directory
-        if os.path.isdir(vegetable_type_path):
-            description_file = os.path.join(vegetable_type_path, f"{vegetable_type}_Description.txt")
-            image_file = os.path.join(vegetable_type_path, f"{vegetable_type}_Iconic.jpg")
+        if os.path.isdir(item_path):
+            # Recursively call the function for subdirectories
+            captions.extend(create_vegetable_dictionary(item_path, destination_folder))
+        else:
+            # Check if it's a description file
+            if item.endswith('_Description.txt'):
+                # Extract vegetable type from the file name
+                vegetable_type = os.path.splitext(item)[0].replace('_Description', '')
 
-            # Check if description and image files exist
-            if os.path.exists(description_file) and os.path.exists(image_file):
-                # Move image to the images folder
-                shutil.copy(image_file, "/content/drive/MyDrive/images")
+                # Check if corresponding image file exists
+                image_file = os.path.join(folder_path, f"{vegetable_type}_Iconic.jpg")
+                if os.path.exists(image_file):
+                    # Create destination folder if it doesn't exist
+                    os.makedirs(destination_folder, exist_ok=True)
 
-                with open(description_file, 'r') as f:
-                    description_text = f.read()
+                    # Check if the image file doesn't exist in the destination folder
+                    destination_image_file = os.path.join(destination_folder, os.path.basename(image_file))
+                    if not os.path.exists(destination_image_file):
+                        # Move image to the destination folder
+                        shutil.copy(image_file, destination_folder)
 
-                captions.append({
-                    "file_name": os.path.basename(image_file),
-                    "text": description_text
-                })
+                    with open(item_path, 'r') as f:
+                        description_text = f.read()
+
+                    captions.append({
+                        "file_name": os.path.basename(image_file),
+                        "text": description_text
+                    })
 
     return captions
 
 # Example usage
 folder_path = "/content/drive/MyDrive/Vegetables"
-captions = create_vegetable_dictionary(folder_path)
+destination_folder = "/content/drive/MyDrive/images"
+captions = create_vegetable_dictionary(folder_path, destination_folder)
+print("The model will be trained on ", len(captions), " items.")
 print(captions)
 
 import json
