@@ -1,36 +1,51 @@
 from transformers import AutoModelForCausalLM
 import torch
-from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
-def get_pretrained_model():
-
-    model = AutoModelForCausalLM.from_pretrained("microsoft/git-base")
+class Model():
+    def __init__(self):
+        self.model = AutoModelForCausalLM.from_pretrained("microsoft/git-base")
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    return model
+    def train_model(self, train_dataloader):
 
-def train_model(model, train_dataloader, num_epochs=50):
+        optimizer = torch.optim.AdamW(self.model.parameters(), lr=5e-5)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+        self.model.to(self.device)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
+        self.model.train()
 
-    model.train()
+        for epoch in range(50):
+            print("Epoch:", epoch)
+            for idx, batch in enumerate(train_dataloader):
+                input_ids = batch.pop("input_ids").to(self.device)
+                pixel_values = batch.pop("pixel_values").to(self.device)
+                outputs = self.model(input_ids=input_ids,
+                                pixel_values=pixel_values,
+                                labels=input_ids)
 
-    for epoch in range(num_epochs):
-        print("Epoch:", epoch)
-        for idx, batch in enumerate(train_dataloader):
-            input_ids = batch.pop("input_ids").to(device)
-            pixel_values = batch.pop("pixel_values").to(device)
-            outputs = model(input_ids=input_ids,
-                            pixel_values=pixel_values,
-                            labels=input_ids)
+                loss = outputs.loss
 
-            loss = outputs.loss
+                print("Loss:", loss.item())
 
-            print("Loss:", loss.item())
+                loss.backward()
 
-            loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
 
-            optimizer.step()
-            optimizer.zero_grad()
+    def use_model(self, img_path, processor):
+
+        img = mpimg.imread(img_path)
+
+        plt.imshow(img)
+        plt.axis('off')
+        plt.show()
+
+        inputs = processor(images=img, return_tensors="pt").to(self.device)
+        pixel_values = inputs.pixel_values
+
+        generated_ids = self.model.generate(pixel_values=pixel_values, max_length=50)
+        generated_caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
+        return generated_caption
