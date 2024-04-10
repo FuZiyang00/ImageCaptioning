@@ -1,36 +1,32 @@
-from web_scraping import Web_scraper
-from datasets import load_dataset 
-from model import ImageCaptioningModel
-import torch
+from dataset_utils import create_vegetable_dictionary, handle_dataset, ImageCaptioningDataset
+from model_utils import get_pretrained_model, train_model
+from inference_utils import get_processor, generate_caption_for_image
 
-if __name__ == "__main__": 
+def main():
+    # Define folder paths
+    folder_path = "/ImageCaptioning/Vegetables"
+    destination_folder = "/ImageCaptioning/images"
+    
+    # Create vegetable dictionary
+    captions = create_vegetable_dictionary(folder_path, destination_folder)
+    print("The model will be trained on ", len(captions), " items.")
+    print(captions)
 
-    url = 'https://www.carrefour.it/spesa-online/dolci-e-prima-colazione/'
+    # Load dataset
+    dataset = handle_dataset(destination_folder, captions)
+    
+    # Define and train model
+    model = get_pretrained_model()
 
-    browser = "Firefox"
+    processor = get_processor()
+    train_dataset = ImageCaptioningDataset(dataset, processor)
     
-    #web_scraper = Web_scraper(url, browser)
-    #links, title = web_scraper.get_images(20)
-    #web_scraper.download_images(links, title)
-    #web_scraper.driver.quit()
-    
-    path = 'images'
-    
-    #web_scraper.get_metadata(path)
-    
-    dataset = load_dataset("imagefolder", data_dir=path, split="train")
-    #dataset = dataset[:50]
-    #print(dataset)
-    
-    ds = dataset.train_test_split(test_size=0.1)
-    train_ds = ds["train"]
-    test_ds = ds["test"]
+    train_model(model, dataset)
 
-    model = ImageCaptioningModel("microsoft/git-base")
+    # Generate caption for an image
+    img_path = '/content/drive/MyDrive/onion.jpg'
+    generated_caption = generate_caption_for_image(model, img_path)
+    print("Generated caption:", generated_caption)
 
-    
-
-    train_ds.set_transform(model.transforms)
-    test_ds.set_transform(model.transforms)
-    training_args = model.training_args("microsoft/git-base")
-    model.train(train_ds, test_ds, training_args)
+if __name__ == "__main__":
+    main()
