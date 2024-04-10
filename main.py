@@ -1,7 +1,9 @@
-from web_scraping import Web_scraper
+from src.web_scraping import Web_scraper
 from datasets import load_dataset 
-from model import ImageCaptioningModel
-import torch
+from src.model import ImageCaptioningModel
+from src.data_loader import ImageCaptioningDataset
+from src.model import Transformer_model
+from src.dataset_downloader import CreateImageDataset
 
 if __name__ == "__main__": 
 
@@ -13,19 +15,6 @@ if __name__ == "__main__":
     # web_scraper.download_images(links, title)
     # web_scraper.driver.quit()
 
-    path = 'images'
-    # web_scraper.get_metadata(path)
-    dataset = load_dataset("imagefolder", data_dir=path, split="train")
-    print(dataset)
-    dataset = dataset[:50]
+    CreateImageDataset().download_images()
 
-    ds = dataset.train_test_split(test_size=0.1)
-    train_ds = ds["train"]
-    test_ds = ds["test"]
-
-    model = ImageCaptioningModel("microsoft/git-base")
-    train_ds.set_transform(model.transforms)
-    test_ds.set_transform(model.transforms)
-    training_args = model.training_args("microsoft/git-base")
-    model.train(train_ds, test_ds, training_args)
-
+   
