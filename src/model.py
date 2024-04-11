@@ -2,7 +2,7 @@ import torch
 
 class Transformer_model: 
     def __init__(self, model):
-        self.model = model.to("cuda" if torch.cuda.is_available() else "cpu") 
+        self.model = model.to("cpu") 
         self.device = self.model.device # Obtain the device from the model
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=5e-5)
 
