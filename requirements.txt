@@ -7,3 +7,4 @@ pyarrow==15.0.2
 selenium==4.19.0
 torch==2.2.2
 transformers @ git+https://github.com/huggingface/transformers.git@863e2562d8d8a535caccb644b15efec663248daa
+pillow==10.3.0
